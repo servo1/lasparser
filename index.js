@@ -1,4 +1,5 @@
-var DataView = require('fast-dataview');
+//var DataView = require('fast-dataview');
+
 
 function lasreader(buff) {
   if (!(this instanceof lasreader)) return new lasreader(buff);
@@ -31,7 +32,7 @@ lasreader.prototype.loadHeaderFromFile = function() {
         offset = this.getHeaderRevision1_4(offset);
         break;
       default:
-        ge('unsupported version ' + this.header.versionMinor);
+        console.log('unsupported version ' + this.header.versionMinor);
         break;
     }
   }
@@ -83,7 +84,6 @@ lasreader.prototype.getLegacyPointNumbers = function(offset, old) {
     numpointReturn.push(dv.getUint32(loffset, true)); //4
     loffset += 4;
   }
-  ge('HERE------------', numpoint)
   if (old) {
     this.header.numberOfPointRecords = numpoint;
     this.header.numberOfPointsByReturn = numpointReturn;
@@ -145,9 +145,12 @@ lasreader.prototype.getHeaderRevision1_1 = function(offset) {
   offset = this.getBBoxInformations(offset);
   return offset;
 };
+
+
 lasreader.prototype.getHeaderRevision1_2 = function(offset) {
   offset = this.getHeaderRevision1_1(offset);
 };
+
 lasreader.prototype.getHeaderRevision1_3 = function(offset) {
   offset = this.getHeaderRevision1_2(offset);
   var dv = new DataView(this.buff, offset, 8);
@@ -191,17 +194,17 @@ laspoint = function(buff, header, pointNumber) {
   this.pdv = new DataView(this.buff, pointPosition, this.header.pointDataRecordLength)
   this.pointData = {};
   this.pointDataFormat = {
-    0: this.getDataForPointFormat0,
-    1: this.getDataForPointFormat1,
-    2: this.getDataForPointFormat2,
-    3: this.getDataForPointFormat3,
-    4: this.getDataForPointFormat4,
-    5: this.getDataForPointFormat5,
-    6: this.getDataForPointFormat6,
-    7: this.getDataForPointFormat7,
-    8: this.getDataForPointFormat8,
-    9: this.getDataForPointFormat9,
-    10: this.getDataForPointFormat10,
+    0: this.getDataForPointFormat0.bind(this),
+    1: this.getDataForPointFormat1.bind(this),
+    2: this.getDataForPointFormat2.bind(this),
+    3: this.getDataForPointFormat3.bind(this),
+    4: this.getDataForPointFormat4.bind(this),
+    5: this.getDataForPointFormat5.bind(this),
+    6: this.getDataForPointFormat6.bind(this),
+    7: this.getDataForPointFormat7.bind(this),
+    8: this.getDataForPointFormat8.bind(this),
+    9: this.getDataForPointFormat9.bind(this),
+    10: this.getDataForPointFormat10.bind(this),
   }
   this.ppos = {
     b1: 1, //00000001
@@ -322,6 +325,122 @@ laspoint.prototype.getDataForPointFormat10 = function() {
   offset = this.getWaveFormPacketData(offset);
   return offset;
 }
+var cacheBuffer = new ArrayBuffer(8);
+var uint8Array = new Uint8Array(cacheBuffer);
+var int8Array = new Int8Array(cacheBuffer);
+var uint16Array = new Uint16Array(cacheBuffer);
+var int16Array = new Int16Array(cacheBuffer);
+var uint32Array = new Uint32Array(cacheBuffer);
+var int32Array = new Int32Array(cacheBuffer);
+var float32Array = new Float32Array(cacheBuffer);
+var float64Array = new Float64Array(cacheBuffer);
+
+function DataView(buff, offset, count) {
+  this.buff = buff;
+  this.offset = offset;
+  this.count = count;
+
+  this.uint8Array = uint8Array;
+  this.int8Array = int8Array;
+  this.int16Array = int16Array;
+  this.int32Array = int32Array;
+  this.float32Array = float32Array;
+  this.float64Array = float64Array;
+}
+DataView.prototype.getInt8 = function(offset) {
+  // Use TypedArray
+  this.uint8Array[0] = this.buff[offset + this.offset];
+  return this.int8Array[0];
+};
+DataView.prototype.getInt16 = function(offset, lendian) {
+  // Use TypedArray
+  offset += this.offset;
+  if (lendian) {
+    this.uint8Array[0] = this.buff[offset + 0];
+    this.uint8Array[1] = this.buff[offset + 1];
+  } else {
+    this.uint8Array[0] = this.buff[offset + 1];
+    this.uint8Array[1] = this.buff[offset + 0];
+  }
+  return this.int16Array[0];
+};
+DataView.prototype.getInt32 = function(offset, lendian) {
+  // Use TypedArray
+  offset += this.offset;
+  if (lendian) {
+    this.uint8Array[0] = this.buff[offset + 0];
+    this.uint8Array[1] = this.buff[offset + 1];
+    this.uint8Array[2] = this.buff[offset + 2];
+    this.uint8Array[3] = this.buff[offset + 3];
+  } else {
+    this.uint8Array[0] = this.buff[offset + 3];
+    this.uint8Array[1] = this.buff[offset + 2];
+    this.uint8Array[2] = this.buff[offset + 1];
+    this.uint8Array[3] = this.buff[offset + 0];
+  }
+  return this.int32Array[0];
+};
+
+DataView.prototype.getUint8 = function(offset, lendian) {
+  return this.buff[offset + this.offset]
+}
+DataView.prototype.getUint16 = function(offset, lendian) {
+  offset += this.offset;
+  if (lendian) {
+    return (this.buff[offset + 1] << 8) | this.buff[offset + 0];
+  } else {
+    return (this.buff[offset + 0] << 8) | this.buff[offset + 1];
+  }
+}
+DataView.prototype.getUint32 = function(offset, lendian) {
+  if (lendian) {
+    return ((this.buff[offset + 3] << 24) >>> 0) + ((this.buff[offset + 2] << 16) | (this.buff[offset + 1] << 8) | this.buff[offset + 0]);
+  } else {
+    return ((this.buff[offset + 0] << 24) >>> 0) + ((this.buff[offset + 1] << 16) | (this.buff[offset + 2] << 8) | this.buff[offset + 3]);
+  }
+}
+DataView.prototype.getFloat32 = function(offset, lendian) {
+  // Use TypedArray
+  offset += this.offset;
+  if (lendian) {
+    this.uint8Array[0] = this.buff[offset + 0];
+    this.uint8Array[1] = this.buff[offset + 1];
+    this.uint8Array[2] = this.buff[offset + 2];
+    this.uint8Array[3] = this.buff[offset + 3];
+  } else {
+    this.uint8Array[0] = this.buff[offset + 3];
+    this.uint8Array[1] = this.buff[offset + 2];
+    this.uint8Array[2] = this.buff[offset + 1];
+    this.uint8Array[3] = this.buff[offset + 0];
+  }
+  return this.float32Array[0];
+};
+DataView.prototype.getFloat64 = function(offset, lendian) {
+  offset += this.byteOffset;
+  // Use TypedArray
+  if (lendian) {
+    this.uint8Array[0] = this.buff[offset + 0];
+    this.uint8Array[1] = this.buff[offset + 1];
+    this.uint8Array[2] = this.buff[offset + 2];
+    this.uint8Array[3] = this.buff[offset + 3];
+    this.uint8Array[4] = this.buff[offset + 4];
+    this.uint8Array[5] = this.buff[offset + 5];
+    this.uint8Array[6] = this.buff[offset + 6];
+    this.uint8Array[7] = this.buff[offset + 7];
+  } else {
+    this.uint8Array[0] = this.buff[offset + 7];
+    this.uint8Array[1] = this.buff[offset + 6];
+    this.uint8Array[2] = this.buff[offset + 5];
+    this.uint8Array[3] = this.buff[offset + 4];
+    this.uint8Array[4] = this.buff[offset + 3];
+    this.uint8Array[5] = this.buff[offset + 2];
+    this.uint8Array[6] = this.buff[offset + 1];
+    this.uint8Array[7] = this.buff[offset + 0];
+  }
+  return this.float64Array[0];
+};
+
+
 
 if (typeof module !== "undefined" && ('exports' in module)) {
   module.exports = lasreader;
