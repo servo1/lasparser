@@ -1,6 +1,7 @@
 # lasparser
 LAS File parser based upon itowns old code.  Uses plain javascript.
 This library is adopted from:  https://github.com/iTowns/itowns-legacy/blob/ea94e8ed246d3bc5b567cfdb50e2151ba58cc7d3/src/LasReader.js
+The DataView code is primarily taken from https://github.com/finscn/fast-dataview
 
 The library supports las version 1.0-1.10.  
 
