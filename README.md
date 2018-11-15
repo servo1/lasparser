@@ -4,7 +4,7 @@ This library is adopted from:  https://github.com/iTowns/itowns-legacy/blob/ea94
 
 The library supports las version 1.0-1.10.  Although, it is currently not recognizing the number of points for version 1.4 which will be fixed shortly.
 
-This code is built around the concept that it should be easy to use in the browser as well as on a server with no modification or needing little to no external libraries.
+This code is built around the concept that it should be easy to use in the browser as well as on a server with no modification and needing little to no external libraries.
 
 The sample usage below requires laszip to be installed from lastools (https://rapidlasso.com/lastools/)
 
